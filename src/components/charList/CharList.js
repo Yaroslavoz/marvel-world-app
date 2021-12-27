@@ -1,4 +1,4 @@
-import { Component } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import './charList.scss';
 import PropTypes from 'prop-types';
 import Spinner from '../spinner/Spinner';
@@ -6,58 +6,53 @@ import MarvelService from '../../services/MarvelService';
 import ErrorMessage from '../errorMessage/ErrorMessage';
 
 
-class CharList extends Component {
-    
-
-    state = {
+const CharList = (props) => {
+    const [stateObj, setState] = useState({
         list: [],
         loading: true,
         error: false,
         newListLoading: false,
         charsOffset: 210,
         charEnded: false
-    }
+    })
 
-    onError = () => {
-        this.setState({
+    const onError = () => {
+        setState(state => ({...state,
             error: true, 
             loading: false, 
             newListLoading: true,
             
-        })
+        }))
     }
 
-    onRequest = (offset) => {
+   const onRequest = (offset) => {
         // const offset = this.state.charsOffset + 9;
         // this.myRef.className = 'char__item_selected'
         
-        this.onListLoading();
-        this.marvelService.getAllCharacters(offset)
-            .then(this.onListLoaded)
-            .catch(this.onError)
+        onListLoading();
+        marvelService.getAllCharacters(offset)
+            .then(onListLoaded)
+            .catch(onError)
     }
-    onSelect = elem => {
-        this.myRef = elem;
-        
-    }
+    // const onSelect = elem => {
+    //     myRef = elem;
+    // }
 
-    handleSelect = (e) => {
-      console.log( e.target); 
-    }
+    
 
-    onListLoading = () => {
-        this.setState({
+    const onListLoading = () => {
+        setState(state => ({...state,
             newListLoading: true
-        })
+        }))
     }
 
-    onListLoaded = (list) => {
+    const onListLoaded = (list) => {
         let ended = false;
         if (list.length < 9){
             ended = true;
         }
         
-        this.setState((prev) => ({
+        setState((prev) => ({...prev,
             list: [...prev.list, ...list], 
             loading: false,
             newListLoading: false,
@@ -66,15 +61,15 @@ class CharList extends Component {
         }))
     }
 
-    marvelService = new MarvelService();
+    const marvelService = new MarvelService();
     
-    itemRefs = [];
+    const itemRefs = useRef([]);
 
-    setRef = (ref) => {
-        this.itemRefs.push(ref);
-    }
+    // const setRef = (ref) => {
+    //     itemRefs.push(ref);
+    // }
 
-    focusOnItem = (id) => {
+    const focusOnItem = (id) => {
         // В теории можно оставить только фокус, и его в стилях использовать вместо класса
         // На самом деле, решение с css-классом можно сделать, вынеся персонажа
         // в отдельный компонент. Но кода будет больше, появится новое состояние
@@ -83,17 +78,17 @@ class CharList extends Component {
         // По возможности, не злоупотребляйте рефами, только в крайних случаях
         // this.itemRefs.forEach(item => item.classList.remove('char__item_selected'));
         // this.itemRefs[id].classList.add('char__item_selected');
-        this.itemRefs[id].focus();
+        itemRefs.current[id].focus();
     }
 
-    componentDidMount() {
-        this.onRequest();
-    }
+    useEffect(() => {
+        onRequest();
+    }, [])
+    
 
  
 
-    render(){
-        const { list, loading, error, newListLoading, charsOffset, charEnded} = this.state;
+        const { list, loading, error, newListLoading, charsOffset, charEnded} = stateObj;
         const errorMessage = error ? <ErrorMessage /> : null;
         return (
             <div className="char__list">
@@ -106,16 +101,17 @@ class CharList extends Component {
                         return (
                        <li 
                           key={id}
-                          ref={this.setRef}
+                        //   ref={setRef}
+                          ref={elem => itemRefs.current[i] = elem}
                           tabIndex={0}
                           className="char__item"
                           onClick={(e) => {
-                                this.focusOnItem(i);
-                                this.props.onSelectedChar(id)}}
+                                focusOnItem(i);
+                                props.onSelectedChar(id)}}
                             onKeyPress={(e) => {
                                 if (e.key === ' ' || e.key === "Enter") {
-                                    this.props.onCharSelected(id);
-                                    this.focusOnItem(i);
+                                    props.onSelectedChar(id);
+                                    focusOnItem(i);
                                 }}}
                           >
                             <img src={thumbnail} alt={thumbnail} style={objStyle}/>
@@ -127,7 +123,7 @@ class CharList extends Component {
                 <button
                     disabled={newListLoading}
                     style={{ 'display': charEnded ? 'none' : 'block'}}
-                    onClick={() => this.onRequest(charsOffset)}
+                    onClick={() => onRequest(charsOffset)}
                     className="button button__main button__long">
                     <div className="inner">load more</div>
                 </button>
@@ -136,7 +132,6 @@ class CharList extends Component {
         )
     }
     
-}
 
 CharList.propTypes = {
     onSelectedChar: PropTypes.func.isRequired
