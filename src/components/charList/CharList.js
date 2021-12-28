@@ -2,50 +2,36 @@ import { useState, useEffect, useRef } from 'react';
 import './charList.scss';
 import PropTypes from 'prop-types';
 import Spinner from '../spinner/Spinner';
-import MarvelService from '../../services/MarvelService';
+import useMarvelService from '../../services/MarvelService';
 import ErrorMessage from '../errorMessage/ErrorMessage';
 
 
 const CharList = (props) => {
+    const {error, loading, getAllCharacters} = useMarvelService();
+
     const [stateObj, setState] = useState({
         list: [],
-        loading: true,
-        error: false,
         newListLoading: false,
         charsOffset: 210,
         charEnded: false
     })
 
-    const onError = () => {
-        setState(state => ({...state,
-            error: true, 
-            loading: false, 
-            newListLoading: true,
-            
-        }))
-    }
-
-   const onRequest = (offset) => {
+    const onRequest = (offset, initial) => {
         // const offset = this.state.charsOffset + 9;
         // this.myRef.className = 'char__item_selected'
-        
-        onListLoading();
-        marvelService.getAllCharacters(offset)
+        initial ? 
+        setState(state => ({...state,
+            newListLoading: false
+        }))
+        : setState(state => ({...state,
+            newListLoading: true
+        }));
+        getAllCharacters(offset)
             .then(onListLoaded)
-            .catch(onError)
     }
     // const onSelect = elem => {
     //     myRef = elem;
     // }
-
-    
-
-    const onListLoading = () => {
-        setState(state => ({...state,
-            newListLoading: true
-        }))
-    }
-
     const onListLoaded = (list) => {
         let ended = false;
         if (list.length < 9){
@@ -54,14 +40,12 @@ const CharList = (props) => {
         
         setState((prev) => ({...prev,
             list: [...prev.list, ...list], 
-            loading: false,
             newListLoading: false,
             charsOffset: prev.charsOffset + 9,
             charEnded: ended
         }))
     }
 
-    const marvelService = new MarvelService();
     
     const itemRefs = useRef([]);
 
@@ -82,18 +66,18 @@ const CharList = (props) => {
     }
 
     useEffect(() => {
-        onRequest();
+        onRequest(stateObj.charsOffset, true);
     }, [])
     
 
  
 
-        const { list, loading, error, newListLoading, charsOffset, charEnded} = stateObj;
+        const { list, newListLoading, charsOffset, charEnded} = stateObj;
         const errorMessage = error ? <ErrorMessage /> : null;
         return (
             <div className="char__list">
                 {errorMessage}
-                {loading ? <Spinner /> :
+                {loading && !newListLoading ? <Spinner /> :
                 (
                 <ul className="char__grid">
                     {list && list.map(({ name, thumbnail, id }, i) => {

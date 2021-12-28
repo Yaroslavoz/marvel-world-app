@@ -1,59 +1,48 @@
 import './charInfo.scss';
-import MarvelService from '../../services/MarvelService';
+import useMarvelService from '../../services/MarvelService';
 import PropTypes from 'prop-types';
 import Spinner from '../spinner/Spinner';
 import ErrorMessage from '../errorMessage/ErrorMessage';
 import Skeleton from '../skeleton/Skeleton';
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 
 const CharInfo = (props) => {
-    const [stateObj, setState] = useState({
-        char: {},
-        loading: false,
-        error: false
-    });
+    const [stateObj, setState] = useState({});
 
-    const onError = () => {
-        setState(state => ({...state, error: true, loading: false}))
-    }
+    
 
-    const marvelService = new MarvelService();
+    const {loading, error, getOneCharacter, clearError} = useMarvelService();
         
     useEffect(() => {
         updateChar();
+
     }, [props.charId])
 
     
 
     const updateChar = () => {
+        
         const {charId} = props;
         if(!charId) {
             return;
         }
-        onCharLoading();
-        marvelService
-            .getOneCharacter(charId)
+        clearError();
+        getOneCharacter(charId)
             .then(onCharLoaded)
-            .catch(onError);
         
         
     }
     const onCharLoaded = (char) => {
-        setState(state => ({...state, char, loading: false}))
+        setState(char)
     }
 
-    const onCharLoading = () => {
-        setState(state => ({
-            ...state,
-            loading: true
-        }))
-    }
+    
 
-        const { char, loading, error} = stateObj;
-        const skeleton = Object.keys(char).length !== 0 || loading || error ? null : <Skeleton />; 
+        const skeleton = Object.keys(stateObj).length !== 0 || loading || error ? null : <Skeleton />; 
         const errorMessage = error ? <ErrorMessage /> : null;
         const spinner = loading ? <Spinner /> : null;
-        const content = !(loading || error || Object.keys(char).length === 0) ? <View char={char} /> : null;
+        const content = !(loading || error || Object.keys(stateObj).length === 0) ? <View char={stateObj} /> : null;
         return (
             <div className="char__info">
                 {skeleton}
@@ -66,7 +55,7 @@ const CharInfo = (props) => {
     
 
 const View = ({char}) => {
-    const {name, description, thumbnail, homepage, wiki, comics} = char;
+    const {name, description, thumbnail, homepage, wiki, comics, id} = char;
     const objStyle = thumbnail.slice(-17) === 'not_available.jpg' ? {objectFit: 'contain'} : null;
     return (
         <>
@@ -91,12 +80,14 @@ const View = ({char}) => {
             <div className="char__comics">Comics:</div>
             <ul className="char__comics-list">
                 {comics.length === 0 ? (<h6>We haven't found any comics :(</h6>) : (comics.map(({name, resourceURI}) => {
+                    const comicId = resourceURI.slice(43)
                     return (
-                        <li 
+                        <Link  
+                            to={`/comics/${comicId}`}
                             key={resourceURI}
                             className="char__comics-item">
                             {name}
-                        </li>
+                        </Link>
                     )
                 }))
             }

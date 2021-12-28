@@ -1,3 +1,6 @@
+@import '../../style/variables.scss';
+
+
 .comics {
     &__list {
         margin-top: 45px;
@@ -31,6 +34,14 @@
         }
         &:hover {
             transform: translateY(-5px);
+        }
+        &_selected {
+            box-shadow: 0 5px 20px $main-color;
+            transform: translateY(-8px);
+        }
+        &:focus {
+            box-shadow: 0 5px 20px $main-color;
+            transform: translateY(-8px);
         }
     }
 }
