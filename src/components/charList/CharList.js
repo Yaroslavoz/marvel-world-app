@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { CSSTransition, TransitionGroup } from 'react-transition-group';
 import './charList.scss';
 import PropTypes from 'prop-types';
 import Spinner from '../spinner/Spinner';
@@ -80,29 +81,31 @@ const CharList = (props) => {
                 {loading && !newListLoading ? <Spinner /> :
                 (
                 <ul className="char__grid">
-                    {list && list.map(({ name, thumbnail, id }, i) => {
-                        const objStyle = thumbnail.slice(-17) === 'not_available.jpg' ? {objectFit: 'contain'} : null;
-                        return (
-                       <li 
-                          key={id}
-                        //   ref={setRef}
-                          ref={elem => itemRefs.current[i] = elem}
-                          tabIndex={0}
-                          className="char__item"
-                          onClick={(e) => {
-                                focusOnItem(i);
-                                props.onSelectedChar(id)}}
-                            onKeyPress={(e) => {
-                                if (e.key === ' ' || e.key === "Enter") {
-                                    props.onSelectedChar(id);
-                                    focusOnItem(i);
-                                }}}
-                          >
-                            <img src={thumbnail} alt={thumbnail} style={objStyle}/>
-                            <div className="char__name">{name}</div>
-                        </li> 
-                    )})}
-                   
+                    <TransitionGroup component={null}>
+                        {list && list.map(({ name, thumbnail, id }, i) => {
+                            const objStyle = thumbnail.slice(-17) === 'not_available.jpg' ? {objectFit: 'contain'} : null;
+                            return (
+                                <CSSTransition key={id} timeout={500} classNames="char__item">
+                                    <li 
+                                        key={id}
+                                        ref={elem => itemRefs.current[i] = elem}
+                                        tabIndex={0}
+                                        className="char__item"
+                                        onClick={(e) => {
+                                                focusOnItem(i);
+                                                props.onSelectedChar(id)}}
+                                        onKeyPress={(e) => {
+                                            if (e.key === ' ' || e.key === "Enter") {
+                                                props.onSelectedChar(id);
+                                                focusOnItem(i);
+                                            }}}
+                                    >
+                                        <img src={thumbnail} alt={thumbnail} style={objStyle}/>
+                                        <div className="char__name">{name}</div>
+                                    </li> 
+                                </CSSTransition>
+                        )})}
+                    </TransitionGroup> 
                 </ul>)}
                 <button
                     disabled={newListLoading}
