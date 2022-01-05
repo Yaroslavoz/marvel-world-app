@@ -1,9 +1,10 @@
 import './charInfo.scss';
 import useMarvelService from '../../services/MarvelService';
 import PropTypes from 'prop-types';
-import Spinner from '../spinner/Spinner';
-import ErrorMessage from '../errorMessage/ErrorMessage';
-import Skeleton from '../skeleton/Skeleton';
+import setContent from '../../utils/setContent';
+// import Spinner from '../spinner/Spinner';
+// import ErrorMessage from '../errorMessage/ErrorMessage';
+// import Skeleton from '../skeleton/Skeleton';
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
@@ -12,7 +13,7 @@ const CharInfo = (props) => {
 
     
 
-    const {loading, error, getOneCharacter, clearError} = useMarvelService();
+    const { getOneCharacter, clearError, process, setProcess } = useMarvelService();
         
     useEffect(() => {
         updateChar();
@@ -30,6 +31,7 @@ const CharInfo = (props) => {
         clearError();
         getOneCharacter(charId)
             .then(onCharLoaded)
+            .then(() => setProcess('confirmed'))
         
         
     }
@@ -38,24 +40,36 @@ const CharInfo = (props) => {
     }
 
     
-
-        const skeleton = Object.keys(stateObj).length !== 0 || loading || error ? null : <Skeleton />; 
-        const errorMessage = error ? <ErrorMessage /> : null;
-        const spinner = loading ? <Spinner /> : null;
-        const content = !(loading || error || Object.keys(stateObj).length === 0) ? <View char={stateObj} /> : null;
+    // const setContent = (process, char) => {
+    //     switch (process) {
+    //         case 'waiting':
+    //             return <Skeleton />;
+    //             break;
+    //         case 'loading':
+    //             return <Spinner />;
+    //             break;
+    //         case 'confirmed':
+    //             return <View char={char} />;
+    //             break;
+    //         case 'error':
+    //             return <ErrorMessage />;
+    //             break;
+    //         default:
+    //             throw new Error('Unexpected process')
+    //             break;
+    //     }
+    // }
+        
         return (
             <div className="char__info">
-                {skeleton}
-                {errorMessage}
-                {spinner}
-                {content}
+                {setContent(process, View, stateObj)}
             </div>
         )
     }
     
 
-const View = ({char}) => {
-    const {name, description, thumbnail, homepage, wiki, comics, id} = char;
+const View = ({data}) => {
+    const {name, description, thumbnail, homepage, wiki, comics, id} = data;
     const objStyle = thumbnail.slice(-17) === 'not_available.jpg' ? {objectFit: 'contain'} : null;
     return (
         <>
@@ -75,7 +89,6 @@ const View = ({char}) => {
             </div>
             <div className="char__descr">
                 {description}
-                {/* In Norse mythology, Loki is a god or jötunn (or both). Loki is the son of Fárbauti and Laufey, and the brother of Helblindi and Býleistr. By the jötunn Angrboða, Loki is the father of Hel, the wolf Fenrir, and the world serpent Jörmungandr. By Sigyn, Loki is the father of Nari and/or Narfi and with the stallion Svaðilfari as the father, Loki gave birth—in the form of a mare—to the eight-legged horse Sleipnir. In addition, Loki is referred to as the father of Váli in the Prose Edda. */}
             </div>
             <div className="char__comics">Comics:</div>
             <ul className="char__comics-list">

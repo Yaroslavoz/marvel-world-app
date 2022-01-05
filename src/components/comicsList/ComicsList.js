@@ -5,6 +5,21 @@ import useMarvelService from '../../services/MarvelService';
 import Spinner from '../spinner/Spinner';
 import ErrorMessage from '../errorMessage/ErrorMessage';
 
+const setContent = (process, Component, newListLoading) => {
+    switch (process) {
+        case 'waiting':
+            return <Spinner />;
+        case 'loading':
+            return newListLoading ? <Component  /> : <Spinner />;
+        case 'confirmed':
+            return <Component  />;
+        case 'error':
+            return <ErrorMessage />;
+        default:
+            throw new Error('Unexpected process')
+    }
+  }
+
 const ComicsList = () => {
     const [comicsObj, setState] = useState({
         comics: [],
@@ -12,7 +27,7 @@ const ComicsList = () => {
         offset: 0,
         comicsEnded: false
     })
-    const { error, loading, getAllComics } = useMarvelService();
+    const { error, loading, getAllComics, process, setProcess } = useMarvelService();
 
     const onRequest = (offset, initial) => {
         initial ? 
@@ -24,6 +39,7 @@ const ComicsList = () => {
         }));
         getAllComics(offset)
             .then(onListLoaded)
+            .then(() => setProcess('confirmed'))
     }
 
     const onListLoaded = (list) => {
@@ -58,34 +74,35 @@ const ComicsList = () => {
 
     return (
         <div className="comics__list">
-            {errorMessage}
-            {loading && !newListLoading ? <Spinner /> :
-            (
-                <ul className="comics__grid">
-                    {comics && comics.map(({ id, title, src, price }, i) => {
-                        return (
-                            <li 
-                                key={id+i}
-                                tabIndex={0} 
-                                ref={elem => itemRefs.current[i] = elem}
-                                className="comics__item"
-                                onClick={() => {
-                                    focusOnItem(i)
-                                }}
-                                        // onKeyPress={(e) => {
-                                        //     if (e.key === ' ' || e.key === "Enter") {
-                                        //         focusOnItem(i);
-                                        //     }}}
-                                >
-                                <Link to={`/comics/${id}`}>
-                                    <img src={src} alt={title} className="comics__item-img"/>
-                                    <div className="comics__item-name">{title}</div>
-                                    <div className="comics__item-price">{price}$</div>
-                                </Link>
-                            </li> 
-                        )
-                    })}
-                </ul>)}
+            {setContent(process, () => {
+                return (
+                    <ul className="comics__grid">
+                        {comics && comics.map(({ id, title, src, price }, i) => {
+                            return (
+                                <li 
+                                    key={id+i}
+                                    tabIndex={0} 
+                                    ref={elem => itemRefs.current[i] = elem}
+                                    className="comics__item"
+                                    onClick={() => {
+                                        focusOnItem(i)
+                                    }}
+                                            // onKeyPress={(e) => {
+                                            //     if (e.key === ' ' || e.key === "Enter") {
+                                            //         focusOnItem(i);
+                                            //     }}}
+                                    >
+                                    <Link to={`/comics/${id}`}>
+                                        <img src={src} alt={title} className="comics__item-img"/>
+                                        <div className="comics__item-name">{title}</div>
+                                        <div className="comics__item-price">{price}$</div>
+                                    </Link>
+                                </li> 
+                            )
+                        })}
+                    </ul>
+                )
+            })}
             <button 
                 disabled={newListLoading}
                 style={{ 'display': comicsEnded ? 'none' : 'block'}}

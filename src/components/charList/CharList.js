@@ -1,14 +1,29 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { CSSTransition, TransitionGroup } from 'react-transition-group';
 import './charList.scss';
 import PropTypes from 'prop-types';
-import Spinner from '../spinner/Spinner';
 import useMarvelService from '../../services/MarvelService';
+import Spinner from '../spinner/Spinner';
 import ErrorMessage from '../errorMessage/ErrorMessage';
 
 
+const setContent = (process, Component, newListLoading) => {
+    switch (process) {
+        case 'waiting':
+            return <Spinner />;
+        case 'loading':
+            return newListLoading ? <Component  /> : <Spinner />;
+        case 'confirmed':
+            return <Component  />;
+        case 'error':
+            return <ErrorMessage />;
+        default:
+            throw new Error('Unexpected process')
+    }
+  }
+
 const CharList = (props) => {
-    const {error, loading, getAllCharacters} = useMarvelService();
+    const { getAllCharacters, process, setProcess } = useMarvelService();
 
     const [stateObj, setState] = useState({
         list: [],
@@ -29,10 +44,9 @@ const CharList = (props) => {
         }));
         getAllCharacters(offset)
             .then(onListLoaded)
+            .then(() => setProcess('confirmed'))
     }
-    // const onSelect = elem => {
-    //     myRef = elem;
-    // }
+    
     const onListLoaded = (list) => {
         let ended = false;
         if (list.length < 9){
@@ -50,10 +64,6 @@ const CharList = (props) => {
     
     const itemRefs = useRef([]);
 
-    // const setRef = (ref) => {
-    //     itemRefs.push(ref);
-    // }
-
     const focusOnItem = (id) => {
         // В теории можно оставить только фокус, и его в стилях использовать вместо класса
         // На самом деле, решение с css-классом можно сделать, вынеся персонажа
@@ -69,44 +79,47 @@ const CharList = (props) => {
     useEffect(() => {
         onRequest(stateObj.charsOffset, true);
     }, [])
+    const { list, newListLoading, charsOffset, charEnded} = stateObj;
+
+    
+    const elements = useMemo(() => {
+        return setContent(process, () => {
+        return (
+            <ul className="char__grid">
+                <TransitionGroup component={null}>
+                    {list && list.map(({ name, thumbnail, id }, i) => {
+                        const objStyle = thumbnail.slice(-17) === 'not_available.jpg' ? {objectFit: 'contain'} : null;
+                        return (
+                            <CSSTransition key={id} timeout={500} classNames="char__item">
+                                <li 
+                                    key={id}
+                                    ref={elem => itemRefs.current[i] = elem}
+                                    tabIndex={0}
+                                    className="char__item"
+                                    onClick={(e) => {
+                                            focusOnItem(i);
+                                            props.onSelectedChar(id)}}
+                                    onKeyPress={(e) => {
+                                        if (e.key === ' ' || e.key === "Enter") {
+                                            props.onSelectedChar(id);
+                                            focusOnItem(i);
+                                        }}}
+                                >
+                                    <img src={thumbnail} alt={thumbnail} style={objStyle}/>
+                                    <div className="char__name">{name}</div>
+                                </li> 
+                            </CSSTransition>
+                    )})}
+                </TransitionGroup> 
+            </ul>
+        );
+    }, newListLoading)}, [process])
     
 
- 
-
-        const { list, newListLoading, charsOffset, charEnded} = stateObj;
-        const errorMessage = error ? <ErrorMessage /> : null;
         return (
             <div className="char__list">
-                {errorMessage}
-                {loading && !newListLoading ? <Spinner /> :
-                (
-                <ul className="char__grid">
-                    <TransitionGroup component={null}>
-                        {list && list.map(({ name, thumbnail, id }, i) => {
-                            const objStyle = thumbnail.slice(-17) === 'not_available.jpg' ? {objectFit: 'contain'} : null;
-                            return (
-                                <CSSTransition key={id} timeout={500} classNames="char__item">
-                                    <li 
-                                        key={id}
-                                        ref={elem => itemRefs.current[i] = elem}
-                                        tabIndex={0}
-                                        className="char__item"
-                                        onClick={(e) => {
-                                                focusOnItem(i);
-                                                props.onSelectedChar(id)}}
-                                        onKeyPress={(e) => {
-                                            if (e.key === ' ' || e.key === "Enter") {
-                                                props.onSelectedChar(id);
-                                                focusOnItem(i);
-                                            }}}
-                                    >
-                                        <img src={thumbnail} alt={thumbnail} style={objStyle}/>
-                                        <div className="char__name">{name}</div>
-                                    </li> 
-                                </CSSTransition>
-                        )})}
-                    </TransitionGroup> 
-                </ul>)}
+                {elements}
+                
                 <button
                     disabled={newListLoading}
                     style={{ 'display': charEnded ? 'none' : 'block'}}

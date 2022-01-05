@@ -1,13 +1,10 @@
 import './singleCharacterPage.scss';
-import AppBanner from '../../appBanner/AppBanner';
 import { Helmet, HelmetData } from 'react-helmet-async';
 
 const SingleCharacterPage = ({data}) => {
     const helmetData = new HelmetData({});
 
-    const storage = data || JSON.parse(localStorage.getItem('charData'));
-
-    const {name, description, thumbnail} = storage[0];
+    const {name, description, thumbnail} = data;
 
     return (
         <>
@@ -18,7 +15,6 @@ const SingleCharacterPage = ({data}) => {
                 />
                 <title>{name}'s page</title>
             </Helmet>
-            <AppBanner />
             <div className="single-char">
                 <img src={thumbnail} alt={name} className="single-char__char-img"/>
                 <div className="single-char__info">
